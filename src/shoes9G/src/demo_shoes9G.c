@@ -13,10 +13,14 @@
 #include "stdbool.h"
 #include "stdint.h"
 
+#include <api_gps.h>
+
 #include "api_os.h"
 #include "api_debug.h"
 #include "api_event.h"
 #include "api_hal_gpio.h"
+#include "gps_parse.h"
+#include "gps.h"
 
 
 #define MAIN_TASK_STACK_SIZE    (2048 * 2)
@@ -30,9 +34,37 @@
 static HANDLE mainTaskHandle = NULL;
 static HANDLE secondTaskHandle = NULL;
 
+//convert unit ddmm.mmmm to degree(°) 
+double convertCoordinates(double nmeaValue, double nmeaScale){
+    double  tmp = nmeaValue/nmeaScale/100.0;
+    int     dd  = (int)tmp;
+    double  mm  = (tmp - dd) * 100.0 / 60.0;
+
+    tmp = dd+mm;
+    if (tmp < 0) tmp*=-1;
+
+    return(tmp);
+}
 
 void EventDispatch(API_Event_t* pEvent){
     switch(pEvent->id){
+        case API_EVENT_ID_NO_SIMCARD:
+            Trace(2, "#DEBUG: NO SIM CARD%d!",pEvent->param1);
+            //networkFlag = false;
+            break;
+        case API_EVENT_ID_NETWORK_REGISTER_SEARCHING:
+            Trace(2, "#DEBUG: Network register searching");
+            //networkFlag = false;
+            break;
+        case API_EVENT_ID_NETWORK_REGISTER_DENIED:
+            Trace(2, "#DEBUG: Network register denied.");
+        case API_EVENT_ID_NETWORK_REGISTER_NO:
+            Trace(2, "#DEBUG: no network register.");
+            break;
+        case API_EVENT_ID_GPS_UART_RECEIVED:
+            // Trace(1,"received GPS data,length:%d, data:%s,flag:%d",pEvent->param1,pEvent->pParam1,flag);
+            GPS_Update(pEvent->pParam1,pEvent->param1);
+            break;
         default:
             break;
     }
@@ -41,21 +73,34 @@ void EventDispatch(API_Event_t* pEvent){
 // Secondary task where I'm going to execute everything.
 void SecondTask(void *pData){
 
+    GPS_Info_t* gpsInfo = Gps_GetInfo();
+
     // GPIO configuration
-    GPIO_config_t gpioLedBlue = {
+    /*GPIO_config_t gpioLedBlue = {
         .mode         = GPIO_MODE_OUTPUT,
         .pin          = GPIO_PIN27,
         .defaultLevel = GPIO_LEVEL_LOW
-    };
+    };*/
 
-    GPIO_Init(gpioLedBlue); // Initialize GPIO
+    //GPIO_Init(gpioLedBlue); // Initialize GPIO
+
+    // Open GPS hardware(UART2 open either)
+    GPS_Init();
+    GPS_Open(NULL);
+
+    // Wait for gps start up, or gps will not response command
+    while(gpsInfo->rmc.latitude.value == 0){
+        Trace(1, "#LOG: GPS starting up...");
+        OS_Sleep(1000);
+    }
 
     while(1){
-        GPIO_SetLevel(gpioLedBlue, GPIO_LEVEL_HIGH); 
-        Trace(1,"## TESTING 01 ##");
-        OS_Sleep(1000);
-        GPIO_SetLevel(gpioLedBlue, GPIO_LEVEL_LOW);
-        OS_Sleep(1000);
+        // Convert the coordinates
+        double latitude =  convertCoordinates(gpsInfo->rmc.latitude.value, gpsInfo->rmc.latitude.scale);
+        double longitude =  convertCoordinates(gpsInfo->rmc.longitude.value, gpsInfo->rmc.longitude.scale);
+
+        Trace(1, "#LOG: (%f N %f W)", latitude, longitude);
+        OS_Sleep(5000);
     }
 }
 

@@ -6,11 +6,13 @@
 LOCAL_NAME := demo/shoes9G
 
 # List of submodules which contain code we need to include in the final lib
-LOCAL_API_DEPENDS := \
+LOCAL_API_DEPENDS := 	libs/gps \
+						libs/utils \
 
 LOCAL_ADD_INCLUDE := include\
                     include/std_inc \
                     include/api_inc \
+                    libs/gps/minmea/src \
 
 
 # Set this to any non-null string to signal a module which 
