@@ -7,7 +7,7 @@
  * @Author: Ricx8 
  * @Date: 01-20-2019 11:59:50 (Lunar eclipse) 
  * @Last Modified by: Ricx8
- * @Last Modified time: 01-20-2019 11:59:50
+ * @Last Modified time: 01-22-2019 12:22:40
  */
 
 #include "stdbool.h"
@@ -32,7 +32,7 @@
 
 /////////////////////////socket configuration////////////////////////
 #define SERVER_IP           "caracascoder.com" // Replace this with the host to connect
-#define SERVER_PORT     "443"   // Replace this with the port to connect
+#define SERVER_PORT         "443"   // Replace this with the port to connect
 #define SERVER_PATH_POST    "/test/setLocationPOST.php" // [POST] Replace this with your path
 
 // Replace the next certificate with the certificate of the page you will connet to.
@@ -113,6 +113,7 @@ int Https_Post(const char* domain, const char* port,const char* path, const char
     };
 
     // Build the package
+    memset(retBuffer, 0, sizeof(retBuffer));
     snprintf(retBuffer,retBufferLen,"POST %s HTTP/1.1\r\nHost: %s\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: %d\r\n%s\r\n\r\n", path, domain, dataLen, data);
     char* pData = retBuffer;
     Trace(1,"#LOG: Package: %s", pData);
@@ -235,7 +236,7 @@ void SecondTask(void *pData){
     char buffer[2048];
     char locationBuffer[40];
     int len = sizeof(buffer);
-    int locationBufferLen = 25+11;
+    int locationBufferLen = 25+11+1;
 
     // GPIO configuration
     /*GPIO_config_t gpioLedBlue = {
@@ -267,7 +268,7 @@ void SecondTask(void *pData){
         double latitude =  convertCoordinates(gpsInfo->rmc.latitude.value, gpsInfo->rmc.latitude.scale);
         double longitude =  convertCoordinates(gpsInfo->rmc.longitude.value, gpsInfo->rmc.longitude.scale);
 
-        snprintf(locationBuffer, locationBufferLen, "\r\nlocation=(%f N %f W)", latitude, longitude);
+        snprintf(locationBuffer, locationBufferLen, "\r\nlocation=(%.6f N %.6f W)", latitude, longitude);
         Trace(1, "#LOG: %s", locationBuffer);
         //char* pData = retBuffer;
 
