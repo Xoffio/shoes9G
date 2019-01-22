@@ -7,7 +7,7 @@
  * @Author: Ricx8 
  * @Date: 01-20-2019 11:59:50 (Lunar eclipse) 
  * @Last Modified by: Ricx8
- * @Last Modified time: 01-22-2019 12:22:40
+ * @Last Modified time: 01-22-2019 12:37:30
  */
 
 #include "stdbool.h"
@@ -264,18 +264,27 @@ void SecondTask(void *pData){
     OS_DeleteSemaphore(semStart);
 
     while(1){
-        // Convert the coordinates
-        double latitude =  convertCoordinates(gpsInfo->rmc.latitude.value, gpsInfo->rmc.latitude.scale);
-        double longitude =  convertCoordinates(gpsInfo->rmc.longitude.value, gpsInfo->rmc.longitude.scale);
+        uint8_t status;
+        Network_GetActiveStatus(&status);
 
-        snprintf(locationBuffer, locationBufferLen, "\r\nlocation=(%.6f N %.6f W)", latitude, longitude);
-        Trace(1, "#LOG: %s", locationBuffer);
-        //char* pData = retBuffer;
+        if (status){
+            // Convert the coordinates
+            double latitude =  convertCoordinates(gpsInfo->rmc.latitude.value, gpsInfo->rmc.latitude.scale);
+            double longitude =  convertCoordinates(gpsInfo->rmc.longitude.value, gpsInfo->rmc.longitude.scale);
 
-        if(Https_Post(SERVER_IP, SERVER_PORT, SERVER_PATH_POST, locationBuffer, locationBufferLen, buffer, &len) < 0){
-            Trace(1,"http get fail");
+            snprintf(locationBuffer, locationBufferLen, "\r\nlocation=(%.6f N %.6f W)", latitude, longitude);
+            Trace(1, "#LOG: %s", locationBuffer);
+            //char* pData = retBuffer;
+
+            if(Https_Post(SERVER_IP, SERVER_PORT, SERVER_PATH_POST, locationBuffer, locationBufferLen, buffer, &len) < 0){
+                Trace(1,"http get fail");
+            }
+
+            OS_Sleep(5000);
         }
-        OS_Sleep(5000);
+        else{
+            OS_Sleep(1000);
+        }
     }
 }
 
