@@ -123,40 +123,47 @@ int Https_Post(const char* domain, const char* port,const char* path, const char
         Trace(1,"#LOG: ssl init error:%d",error);
         return -1;
     }
+    else{
+        // If SSL init, Connect to server
+        error = SSL_Connect(&config, domain, port);
+        if(error != SSL_ERROR_NONE){
+            Trace(1,"#LOG: ssl connect error:%d",error);
+            Trace(1,"#LOG: ssl destroy");
+            SSL_Destroy(&config);
+            return -1;
+        }
+        else{
+            // If it is connected, Send package
+            Trace(1,"#LOG: Write len:%d data:%s", strlen(pData), pData);
+            ret = SSL_Write(&config, pData, strlen(pData),5000);
+            if(ret <= 0){
+                error = ret;
+                Trace(1,"#LOG: ssl write fail:%d",error);
+                Trace(1,"#LOG: ssl close");
+                SSL_Close(&config);
+                SSL_Destroy(&config);
+                return -1;
+            }
+            else{
+                // If package sended then read response
+                memset(buffer,0,sizeof(buffer));
+                ret = SSL_Read(&config, buffer, strlen(pData), 2000);
+                if(ret <= 0){
+                    error = ret;
+                    Trace(1,"#LOG: ssl read fail:%d",error);
+                    Trace(1,"#LOG: ssl close");
+                    SSL_Close(&config);
+                    SSL_Destroy(&config);
+                    return -1;
+                }
+                Trace(1,"#LOG: read len:%d, data:%s",ret,buffer);
 
-    // Connect to server
-    error = SSL_Connect(&config, domain, port);
-    if(error != SSL_ERROR_NONE){
-        Trace(1,"#LOG: ssl connect error:%d",error);
-        Trace(1,"#LOG: ssl destroy");
-        SSL_Destroy(&config);
-        return -1;
+                SSL_Close(&config);
+                SSL_Destroy(&config);
+            }
+        }
     }
 
-    // Send package
-    Trace(1,"#LOG: Write len:%d data:%s", strlen(pData), pData);
-    ret = SSL_Write(&config, pData, strlen(pData),5000);
-    if(ret <= 0){
-        error = ret;
-        Trace(1,"#LOG: ssl write fail:%d",error);
-        Trace(1,"#LOG: ssl close");
-        SSL_Close(&config);
-        return -1;
-    }
-
-    // Read response
-    memset(buffer,0,sizeof(buffer));
-    ret = SSL_Read(&config, buffer, strlen(pData), 2000);
-    if(ret <= 0){
-        error = ret;
-        Trace(1,"#LOG: ssl read fail:%d",error);
-        Trace(1,"#LOG: ssl close");
-        SSL_Close(&config);
-        return -1;
-    }
-    Trace(1,"#LOG: read len:%d, data:%s",ret,buffer);
-
-    SSL_Close(&config);
     return 0;
 }
 
@@ -257,6 +264,9 @@ void SecondTask(void *pData){
         OS_Sleep(1000);
     }
 
+    if(!GPS_SetOutputInterval(1000))
+        Trace(1,"set nmea output interval fail");
+
     //wait for gprs network connection ok
     Trace(1, "#LOG: waiting to connect to a network.");
     semStart = OS_CreateSemaphore(0);
@@ -273,14 +283,14 @@ void SecondTask(void *pData){
             double longitude =  convertCoordinates(gpsInfo->rmc.longitude.value, gpsInfo->rmc.longitude.scale);
 
             snprintf(locationBuffer, locationBufferLen, "\r\nlocation=(%.6f N %.6f W)", latitude, longitude);
-            Trace(1, "#LOG: %s", locationBuffer);
+            //Trace(1, "#LOG: %s", locationBuffer);
             //char* pData = retBuffer;
 
             if(Https_Post(SERVER_IP, SERVER_PORT, SERVER_PATH_POST, locationBuffer, locationBufferLen, buffer, &len) < 0){
                 Trace(1,"http get fail");
             }
 
-            OS_Sleep(5000);
+            OS_Sleep(15000);
         }
         else{
             OS_Sleep(1000);
