@@ -1,5 +1,6 @@
 <?php
-  $currentLocation = $_POST["location"];
-  echo $currentLocation;
-  echo exec("echo '".date('Y-m-d h:i:sa').": $currentLocation' >> location.txt");
+  $latitude = $_POST["latitude"];
+  $longitude = $_POST["longitude"];
+  echo "1";
+  exec("echo '".date('Y-m-d h:i:sa').": [$latitude, $longitude]' >> location.txt");
 ?>
