@@ -7,7 +7,7 @@
  * @Author: Ricx8 
  * @Date: 01-20-2019 11:59:50 (Lunar eclipse) 
  * @Last Modified by: Ricx8
- * @Last Modified time: 01-22-2019 12:37:30
+ * @Last Modified time: 01-30-2019 06:09:56 pm
  */
 
 #include "stdbool.h"
@@ -31,41 +31,41 @@
 #include "api_ssl.h"
 
 /////////////////////////socket configuration////////////////////////
-#define SERVER_IP           "caracascoder.com" // Replace this with the host to connect
+#define SERVER_IP           "oikyo.com" // Replace this with the host to connect
 #define SERVER_PORT         "443"   // Replace this with the port to connect
-#define SERVER_PATH_POST    "/test/setLocationPOST.php" // [POST] Replace this with your path
+#define SERVER_PATH_POST    "/test/shoes9G/setLocationPOST.php" // [POST] Replace this with your path
 
 // Replace the next certificate with the certificate of the page you will connet to.
 const char* ca_cert = "-----BEGIN CERTIFICATE-----\n\
-MIIFbDCCBFSgAwIBAgISA0gXQ0cnsv7p31+BZWAULSL1MA0GCSqGSIb3DQEBCwUA\n\
+MIIFWzCCBEOgAwIBAgISA5xcctEV9oROKZhY/HuEipIYMA0GCSqGSIb3DQEBCwUA\n\
 MEoxCzAJBgNVBAYTAlVTMRYwFAYDVQQKEw1MZXQncyBFbmNyeXB0MSMwIQYDVQQD\n\
-ExpMZXQncyBFbmNyeXB0IEF1dGhvcml0eSBYMzAeFw0xODEyMDUwNTQyMjRaFw0x\n\
-OTAzMDUwNTQyMjRaMBsxGTAXBgNVBAMTEGNhcmFjYXNjb2Rlci5jb20wggEiMA0G\n\
-CSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC65kt6A41pEicBD1xzlHRmZU3DfZcB\n\
-lp8D/xLI2ye0uEKX4qexrsuUycyUnAu6RTUHs6zb5dnXdYHUyQj6cUhq/bDn1td8\n\
-rpj3+m1tSAXSIFEoxG+oT9w+HbjGO6chitI07k7pR5UVwXNVuzEO1Oq3PqBrYK6I\n\
-5EEjmW3ABS2NZlgAF/xaDHGaLswrOnbouT+tkrnGN74FRc6prNw5e+dBcdhJpu16\n\
-9OqfrZo1/e8qLC3knuGBPJtY1m09vYlyMq/acW2G4b+6bLsdWHohPOijDxVvxy/X\n\
-NG7W6/EkebsImS3UfiMCqnredmiI2TZs10dRHE2j7FBO3zvNfMaCmuzDAgMBAAGj\n\
-ggJ5MIICdTAOBgNVHQ8BAf8EBAMCBaAwHQYDVR0lBBYwFAYIKwYBBQUHAwEGCCsG\n\
-AQUFBwMCMAwGA1UdEwEB/wQCMAAwHQYDVR0OBBYEFFzYUb1zmdjpUc7mi4+pxv83\n\
-Nl+zMB8GA1UdIwQYMBaAFKhKamMEfd265tE5t6ZFZe/zqOyhMG8GCCsGAQUFBwEB\n\
-BGMwYTAuBggrBgEFBQcwAYYiaHR0cDovL29jc3AuaW50LXgzLmxldHNlbmNyeXB0\n\
-Lm9yZzAvBggrBgEFBQcwAoYjaHR0cDovL2NlcnQuaW50LXgzLmxldHNlbmNyeXB0\n\
-Lm9yZy8wMQYDVR0RBCowKIIQY2FyYWNhc2NvZGVyLmNvbYIUd3d3LmNhcmFjYXNj\n\
-b2Rlci5jb20wTAYDVR0gBEUwQzAIBgZngQwBAgEwNwYLKwYBBAGC3xMBAQEwKDAm\n\
-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\n\
+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\n\
 -----END CERTIFICATE-----";
 
 
@@ -88,7 +88,6 @@ double convertCoordinates(double nmeaValue, double nmeaScale){
     double  mm  = (tmp - dd) * 100.0 / 60.0;
 
     tmp = dd+mm;
-    if (tmp < 0) tmp*=-1;
 
     return(tmp);
 }
@@ -113,8 +112,9 @@ int Https_Post(const char* domain, const char* port,const char* path, const char
     };
 
     // Build the package
-    memset(retBuffer, 0, sizeof(retBuffer));
-    snprintf(retBuffer,retBufferLen,"POST %s HTTP/1.1\r\nHost: %s\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: %d\r\n%s\r\n\r\n", path, domain, dataLen, data);
+    memset(retBuffer, 0, retBufferLen);
+    snprintf(retBuffer,retBufferLen,"POST %s HTTP/1.1\r\nHost: %s\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: %d\r\n%s\r\n\r\n", path, domain, (dataLen-4), data);
+
     char* pData = retBuffer;
     Trace(1,"#LOG: Package: %s", pData);
 
@@ -146,8 +146,8 @@ int Https_Post(const char* domain, const char* port,const char* path, const char
             }
             else{
                 // If package sended then read response
-                memset(buffer,0,sizeof(buffer));
-                ret = SSL_Read(&config, buffer, strlen(pData), 2000);
+                memset(buffer, 0, sizeof(buffer));
+                ret = SSL_Read(&config, buffer, sizeof(buffer), 2000);
                 if(ret <= 0){
                     error = ret;
                     Trace(1,"#LOG: ssl read fail:%d",error);
@@ -188,7 +188,7 @@ void EventDispatch(API_Event_t* pEvent){
             break;
 
         case API_EVENT_ID_GPS_UART_RECEIVED:
-            // Trace(1,"received GPS data,length:%d, data:%s,flag:%d",pEvent->param1,pEvent->pParam1,flag);
+            //Trace(1,"#LOG: received GPS data,length:%d, data:%s",pEvent->param1,pEvent->pParam1);
             GPS_Update(pEvent->pParam1,pEvent->param1);
             break;
 
@@ -241,9 +241,9 @@ void SecondTask(void *pData){
     
     GPS_Info_t* gpsInfo = Gps_GetInfo();
     char buffer[2048];
-    char locationBuffer[40];
+    char locationBuffer[45];
     int len = sizeof(buffer);
-    int locationBufferLen = 25+11+1;
+    int locationBufferLen = 43;
 
     // GPIO configuration
     /*GPIO_config_t gpioLedBlue = {
@@ -261,6 +261,15 @@ void SecondTask(void *pData){
     // Wait for gps start up, or gps will not response command
     while(gpsInfo->rmc.latitude.value == 0){
         Trace(1, "#LOG: GPS starting up...");
+        OS_Sleep(1000);
+    }
+
+    // set gps nmea output interval
+    for(uint8_t i = 0;i<5;++i){
+        bool ret = GPS_SetOutputInterval(10000);
+        Trace(1,"#LOG: set gps ret:%d",ret);
+        if(ret)
+            break;
         OS_Sleep(1000);
     }
 
@@ -282,7 +291,7 @@ void SecondTask(void *pData){
             double latitude =  convertCoordinates(gpsInfo->rmc.latitude.value, gpsInfo->rmc.latitude.scale);
             double longitude =  convertCoordinates(gpsInfo->rmc.longitude.value, gpsInfo->rmc.longitude.scale);
 
-            snprintf(locationBuffer, locationBufferLen, "\r\nlocation=(%.6f N %.6f W)", latitude, longitude);
+            snprintf(locationBuffer, locationBufferLen, "\r\nlatitude=%.6f&longitude=%.6f", latitude, longitude);
             //Trace(1, "#LOG: %s", locationBuffer);
             //char* pData = retBuffer;
 
