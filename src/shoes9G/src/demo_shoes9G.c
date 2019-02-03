@@ -7,7 +7,7 @@
  * @Author: Ricx8 
  * @Date: 01-20-2019 11:59:50 (Lunar eclipse) 
  * @Last Modified by: Ricx8
- * @Last Modified time: 01-30-2019 06:09:56 pm
+ * @Last Modified time: 01-30-2019 12:10:28 am
  */
 
 #include "stdbool.h"
@@ -71,7 +71,7 @@ rmhKqgapRhgYVpnFtzfXqJizB4HyCv6zrlQj8qg4gQ==\n\
 
 #define MAIN_TASK_STACK_SIZE    (2048 * 2)
 #define MAIN_TASK_PRIORITY      0
-#define MAIN_TASK_NAME          "Main Test Task"
+#define MAIN_TASK_NAME          "Main Task"
 
 #define SECOND_TASK_STACK_SIZE    (2048 * 2)
 #define SECOND_TASK_PRIORITY      1
@@ -94,8 +94,9 @@ double convertCoordinates(double nmeaValue, double nmeaScale){
 
 //https POST
 int Https_Post(const char* domain, const char* port,const char* path, const char* data, uint16_t dataLen, char* retBuffer, int* bufferLen){
-    uint8_t buffer[2048];
-    int retBufferLen = *bufferLen;
+    const int bufferSize = 2048;
+    //uint8_t buffer[2048];
+    //int retBufferLen = *bufferLen;
     int ret;
     SSL_Error_t error;
     SSL_Config_t config = {
@@ -112,58 +113,57 @@ int Https_Post(const char* domain, const char* port,const char* path, const char
     };
 
     // Build the package
-    memset(retBuffer, 0, retBufferLen);
-    snprintf(retBuffer,retBufferLen,"POST %s HTTP/1.1\r\nHost: %s\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: %d\r\n%s\r\n\r\n", path, domain, (dataLen-4), data);
+    char* buffer = OS_Malloc(bufferSize);
+    snprintf(buffer, bufferSize, "POST %s HTTP/1.1\r\nHost: %s\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: %d\r\n%s\r\n\r\n", path, domain, (dataLen-4), data);
 
-    char* pData = retBuffer;
+    char* pData = buffer;
     Trace(1,"#LOG: Package: %s", pData);
 
     error = SSL_Init(&config);
     if(error != SSL_ERROR_NONE){
         Trace(1,"#LOG: ssl init error:%d",error);
+        OS_Free(buffer);
         return -1;
     }
     else{
         // If SSL init, Connect to server
-        error = SSL_Connect(&config, domain, port);
+        error = SSL_Connect(&config, domain, port); // BUG HERE: crash after 10min aprox.
         if(error != SSL_ERROR_NONE){
             Trace(1,"#LOG: ssl connect error:%d",error);
-            Trace(1,"#LOG: ssl destroy");
-            SSL_Destroy(&config);
-            return -1;
+            goto exit02;
         }
         else{
             // If it is connected, Send package
+            Trace(1, "#LOG: Connected to the server with ssl");
+            
             Trace(1,"#LOG: Write len:%d data:%s", strlen(pData), pData);
             ret = SSL_Write(&config, pData, strlen(pData),5000);
             if(ret <= 0){
                 error = ret;
                 Trace(1,"#LOG: ssl write fail:%d",error);
-                Trace(1,"#LOG: ssl close");
-                SSL_Close(&config);
-                SSL_Destroy(&config);
-                return -1;
+                goto exit01;
             }
             else{
-                // If package sended then read response
+                // If package sent then read response.
                 memset(buffer, 0, sizeof(buffer));
                 ret = SSL_Read(&config, buffer, sizeof(buffer), 2000);
                 if(ret <= 0){
                     error = ret;
                     Trace(1,"#LOG: ssl read fail:%d",error);
-                    Trace(1,"#LOG: ssl close");
-                    SSL_Close(&config);
-                    SSL_Destroy(&config);
-                    return -1;
+                    goto exit01;
                 }
                 Trace(1,"#LOG: read len:%d, data:%s",ret,buffer);
-
-                SSL_Close(&config);
-                SSL_Destroy(&config);
             }
         }
     }
 
+    exit01:
+        Trace(1,"#LOG: ssl close");
+        SSL_Close(&config);
+    exit02:
+        Trace(1,"#LOG: ssl destroy");
+        SSL_Destroy(&config);
+    OS_Free(buffer);
     return 0;
 }
 
@@ -292,14 +292,13 @@ void SecondTask(void *pData){
             double longitude =  convertCoordinates(gpsInfo->rmc.longitude.value, gpsInfo->rmc.longitude.scale);
 
             snprintf(locationBuffer, locationBufferLen, "\r\nlatitude=%.6f&longitude=%.6f", latitude, longitude);
-            //Trace(1, "#LOG: %s", locationBuffer);
-            //char* pData = retBuffer;
+            Trace(1, "#LOG: %s", locationBuffer);
 
             if(Https_Post(SERVER_IP, SERVER_PORT, SERVER_PATH_POST, locationBuffer, locationBufferLen, buffer, &len) < 0){
                 Trace(1,"http get fail");
             }
 
-            OS_Sleep(15000);
+            OS_Sleep(15000); // Send coordinates 4 times per minute
         }
         else{
             OS_Sleep(1000);
