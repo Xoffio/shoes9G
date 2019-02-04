@@ -17,7 +17,8 @@
 		<div id="mainMap"></div>
 
 		<script>
-			var map = L.map('mainMap').setView([40.660302, -73.866782], 15);
+			var map = L.map('mainMap').setView([0, 0], 18);
+			var firstTime = true;
 
 			/*
 				Dark theme: https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png
@@ -28,19 +29,30 @@
 			}).addTo(map);
 
 			var mainMarker = L.marker([0, 0]).addTo(map);
+			var lineTrack = L.polyline([]).addTo(map);
+			var lastPoint = null;
 
 			setInterval(function(){
 			    $.ajax({
 					type: "POST",
 					url: "getLocation.php",
 					async: false,
-					//data: {table : "farmers"},
 					success: function(r){
-						jsonR = jQuery.parseJSON(r);
+						var locArray = jQuery.parseJSON(r);
+						var locLength = locArray.length;
+						var newPoint = [locArray[locLength-1][1], locArray[locLength-1][2]];
 						
-						map.setView([jsonR[4][1], jsonR[4][2]]);
-						mainMarker.setLatLng([jsonR[4][1], jsonR[4][2]]);
-						//L.marker([jsonR[4][1], jsonR[4][2]]).addTo(map);
+						if (firstTime){
+							map.setView(newPoint);
+							firstTime = false;
+						}
+
+						if (newPoint != lastPoint){
+							lastPoint = newPoint;
+
+							lineTrack.addLatLng(lastPoint);
+							mainMarker.setLatLng(lastPoint);
+						}
 					}
 				});
 			}, 1000);

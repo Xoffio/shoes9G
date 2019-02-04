@@ -7,7 +7,7 @@
  * @Author: Ricx8 
  * @Date: 01-20-2019 11:59:50 (Lunar eclipse) 
  * @Last Modified by: Ricx8
- * @Last Modified time: 01-30-2019 12:10:28 am
+ * @Last Modified time: 01-30-2019 02:09:20 pm
  */
 
 #include "stdbool.h"
@@ -93,10 +93,9 @@ double convertCoordinates(double nmeaValue, double nmeaScale){
 }
 
 //https POST
-int Https_Post(const char* domain, const char* port,const char* path, const char* data, uint16_t dataLen, char* retBuffer, int* bufferLen){
+int Https_Post(const char* domain, const char* port,const char* path, const char* data, uint16_t dataLen, uint8_t* retBuffer, int bufferLen){
     const int bufferSize = 2048;
-    //uint8_t buffer[2048];
-    //int retBufferLen = *bufferLen;
+
     int ret;
     SSL_Error_t error;
     SSL_Config_t config = {
@@ -114,7 +113,7 @@ int Https_Post(const char* domain, const char* port,const char* path, const char
 
     // Build the package
     char* buffer = OS_Malloc(bufferSize);
-    snprintf(buffer, bufferSize, "POST %s HTTP/1.1\r\nHost: %s\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: %d\r\n%s\r\n\r\n", path, domain, (dataLen-4), data);
+    snprintf(buffer, bufferSize, "POST %s HTTP/1.1\r\nHost: %s\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: %d\r\n%s \r\n\r\n", path, domain, (dataLen-2), data);
 
     char* pData = buffer;
     Trace(1,"#LOG: Package: %s", pData);
@@ -127,7 +126,7 @@ int Https_Post(const char* domain, const char* port,const char* path, const char
     }
     else{
         // If SSL init, Connect to server
-        error = SSL_Connect(&config, domain, port); // BUG HERE: crash after 10min aprox.
+        error = SSL_Connect(&config, domain, port); // BUG HERE: crash after 8min aprox.
         if(error != SSL_ERROR_NONE){
             Trace(1,"#LOG: ssl connect error:%d",error);
             goto exit02;
@@ -144,15 +143,17 @@ int Https_Post(const char* domain, const char* port,const char* path, const char
                 goto exit01;
             }
             else{
+                //int retBufferLen = *bufferLen;
+
                 // If package sent then read response.
-                memset(buffer, 0, sizeof(buffer));
-                ret = SSL_Read(&config, buffer, sizeof(buffer), 2000);
+                memset(retBuffer, 0, sizeof(retBuffer[0])*bufferLen);
+                ret = SSL_Read(&config, retBuffer, bufferLen, 2000);
                 if(ret <= 0){
                     error = ret;
                     Trace(1,"#LOG: ssl read fail:%d",error);
                     goto exit01;
                 }
-                Trace(1,"#LOG: read len:%d, data:%s",ret,buffer);
+                Trace(1,"#LOG: read len:%d, data:%s", ret, retBuffer);
             }
         }
     }
@@ -240,9 +241,10 @@ void EventDispatch(API_Event_t* pEvent){
 void SecondTask(void *pData){
     
     GPS_Info_t* gpsInfo = Gps_GetInfo();
-    char buffer[2048];
+    int bufferSize = 2048;
+    uint8_t buffer[bufferSize];
     char locationBuffer[45];
-    int len = sizeof(buffer);
+    //int len = sizeof(buffer);
     int locationBufferLen = 43;
 
     // GPIO configuration
@@ -294,7 +296,7 @@ void SecondTask(void *pData){
             snprintf(locationBuffer, locationBufferLen, "\r\nlatitude=%.6f&longitude=%.6f", latitude, longitude);
             Trace(1, "#LOG: %s", locationBuffer);
 
-            if(Https_Post(SERVER_IP, SERVER_PORT, SERVER_PATH_POST, locationBuffer, locationBufferLen, buffer, &len) < 0){
+            if(Https_Post(SERVER_IP, SERVER_PORT, SERVER_PATH_POST, locationBuffer, strlen(locationBuffer), buffer, bufferSize) < 0){
                 Trace(1,"http get fail");
             }
 
