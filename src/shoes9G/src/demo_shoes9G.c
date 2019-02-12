@@ -68,6 +68,7 @@ RQrYvcbiT/9jdVYIMjESmv3FLOaNG8zhJQGdmIaI/JB0HSkjhRwbU1g1eahqRzVU\n\
 rmhKqgapRhgYVpnFtzfXqJizB4HyCv6zrlQj8qg4gQ==\n\
 -----END CERTIFICATE-----";
 
+uint8_t pass[41] = "40 bytes UNIQUE ID"; // Replace this with your unique ID
 
 #define MAIN_TASK_STACK_SIZE    (2048 * 2)
 #define MAIN_TASK_PRIORITY      0
@@ -243,9 +244,10 @@ void SecondTask(void *pData){
     GPS_Info_t* gpsInfo = Gps_GetInfo();
     int bufferSize = 2048;
     uint8_t buffer[bufferSize];
-    char locationBuffer[45];
-    //int len = sizeof(buffer);
-    int locationBufferLen = 43;
+    uint8_t imei[16];
+    int locationBufferLen = 88; // 3 \r\n. 45 of latitude, longitude. 40 of password
+    char locationBuffer[locationBufferLen+2]; 
+    
 
     // GPIO configuration
     /*GPIO_config_t gpioLedBlue = {
@@ -255,6 +257,10 @@ void SecondTask(void *pData){
     };*/
 
     //GPIO_Init(gpioLedBlue); // Initialize GPIO
+
+    // Get imei
+    //memset(imei, 0, sizeof(imei));
+    //INFO_GetIMEI(imei);
 
     // Open GPS hardware(UART2 open either)
     GPS_Init();
@@ -293,7 +299,7 @@ void SecondTask(void *pData){
             double latitude =  convertCoordinates(gpsInfo->rmc.latitude.value, gpsInfo->rmc.latitude.scale);
             double longitude =  convertCoordinates(gpsInfo->rmc.longitude.value, gpsInfo->rmc.longitude.scale);
 
-            snprintf(locationBuffer, locationBufferLen, "\r\nlatitude=%.6f&longitude=%.6f", latitude, longitude);
+            snprintf(locationBuffer, locationBufferLen, "\r\npass=%s&latitude=%.6f&longitude=%.6f", pass, latitude, longitude);
             Trace(1, "#LOG: %s", locationBuffer);
 
             if(Https_Post(SERVER_IP, SERVER_PORT, SERVER_PATH_POST, locationBuffer, strlen(locationBuffer), buffer, bufferSize) < 0){
