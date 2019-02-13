@@ -54,10 +54,12 @@
 			    $.ajax({
 					type: "POST",
 					url: "getLocation.php",
-					async: false,
+					//async: true,
+					//dataType: "json",
 					success: function(r){
 						var locArray = jQuery.parseJSON(r);
 						var locLength = locArray.length;
+
 						var newPoint = [locArray[locLength-1][1], locArray[locLength-1][2]];
 						
 						if (firstTime){

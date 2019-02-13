@@ -3,15 +3,13 @@
 		Returns the last GPS data in a json format
 	*/
 
-	$lastMov = explode("\n", shell_exec("tail -n 5 location.txt"));
+	include "phpFunctions/databaseFunctions.php";
 
-	$movList = array();
-	foreach ($lastMov as $line) {
-		$tmp = explode(";", $line);
-		if ( sizeof($tmp) == 3){
-			array_push($movList, $tmp);
-		}
-	}
+	$movList = selectDB("
+		SELECT dateTime, latitude, longitude 
+		FROM `logs` WHERE trackerID = 1
+		ORDER BY id DESC LIMIT 1;"
+	);
 
 	echo json_encode($movList);
 ?>
