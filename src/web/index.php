@@ -7,6 +7,13 @@
 		<link rel="stylesheet" href="leaflet/leaflet.css">
 		<link rel="stylesheet" href="getLocation.css">
 		<script type="text/javascript" src="jquery-3.3.1.min.js"></script>
+		<script type="text/javascript" src="bootstrap/js/bootstrap.min.js"></script>
+		<script type="text/javascript">
+			function randomColor(){
+				var color = '#'+Math.floor(Math.random()*16777215).toString(16);
+				return (color);
+			}
+		</script>
 	</head>
 	<body>
 		<div class="container-fluid">
@@ -24,9 +31,43 @@
 					<div id="mainMap"></div>
 				</div>
 				<div id="sidebar" class="col col-2">
-					<p>HELLO</p>
+					<div class="card text-center">
+						<div class="card-header">
+							Trackers
+
+							<div class="trackerFilters btn-group btn-group-toggle" data-toggle="buttons">
+								<label class="btn btn-secondary active">
+									<input type="radio" name="tFilter" id="tFilterAll" checked> All
+								</label>
+
+								<label class="btn btn-secondary">
+									<input type="radio" name="tFilter" id="tFilterOnline"> Online
+								</label>
+
+								<label class="btn btn-secondary">
+									<input type="radio" name="tFilter" id="tFilterOffline"> Offline
+								</label>
+							</div>
+						</div>
+					</div>
+
+					<div class="card-body">
+
+						<!-- <div class="btn-group-toggle" data-toggle="buttons">
+							<label class="btn btn-secondary active">
+								<input type="checkbox" checked autocomplete="off"> DEV-01
+								<spam class="onlineTag" >
+									online
+								</spam>
+							</label>
+						</div>-->
+
+						<?php
+							include "phpFunctions/getTrackers.php";
+						?>
+
+					</div>
 				</div>
-				
 			</div>
 			
 		</div>
@@ -47,13 +88,13 @@
 			}).addTo(map);
 
 			var mainMarker = L.marker([0, 0]).addTo(map);
-			var lineTrack = L.polyline([]).addTo(map);
+			var lineTrack = L.polyline([], {color: randomColor()}).addTo(map);
 			var lastPoint = null;
 
 			setInterval(function(){
 			    $.ajax({
 					type: "POST",
-					url: "getLocation.php",
+					url: "phpFunctions/getLocation.php",
 					//async: true,
 					//dataType: "json",
 					success: function(r){

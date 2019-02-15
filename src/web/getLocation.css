@@ -19,6 +19,33 @@ html, .col, .row, .container-fluid{
 
 #sidebar{
 	color: white;
+	padding-left: 0px;
+	padding-right: 0px;
+}
+
+#sidebar .card{
+	margin-top: 5px;
+	background-color: #201f1f;
+}
+
+#sidebar .card-header{
+	background: #262a2c;
+
+}
+
+#sidebar .card-body{
+	height: 100%;
+	background: #191d1e;
+	padding-left: 5px;
+	padding-right: 5px;
+}
+
+#sidebar .card-body .btn{
+	width: 100%;
+	text-align: left;
+	padding-top: 2px;
+	padding-bottom: 2px;
+	margin-bottom: 2px;
 }
 
 .sidebar-wrapper{
@@ -27,3 +54,15 @@ html, .col, .row, .container-fluid{
 	width: 100%;
 }
 
+.onlineTag{
+	float: right;
+	font-size: 10px;
+	color: #38e3ff;
+	padding-top: 1%;
+	padding-bottom: 1%;
+}
+
+.trackerFilters label{
+	padding-top: 0px;
+	padding-bottom: 0px;
+}
