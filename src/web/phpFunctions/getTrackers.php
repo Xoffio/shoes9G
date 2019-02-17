@@ -7,29 +7,37 @@
 
 	switch ($filter) {
 		case 'all':
-			$query = "SELECT name FROM `trackers` WHERE 1 ";
+			$query = "SELECT name, id FROM `trackers` WHERE 1;";
 			break;
 
 		case 'online':
-			$query = "SELECT name FROM `trackers` WHERE lastTrack > ( NOW() - INTERVAL 1 MINUTE )";
+			$query = "SELECT name, id FROM `trackers` WHERE lastTrack > ( NOW() - INTERVAL 1 MINUTE )";
 			break;
 
 		case 'offline':
-			$query = "SELECT name FROM `trackers` WHERE lastTrack < ( NOW() - INTERVAL 1 MINUTE )";
+			$query = "SELECT name, id FROM `trackers` WHERE lastTrack < ( NOW() - INTERVAL 1 MINUTE )";
 			break;
 		
 		default:
-			$query = "SELECT name FROM `trackers` WHERE 1 ";
+			$query = "SELECT name, id FROM `trackers` WHERE 1 ";
 			break;
 	}
 
 	$html = '<div class="btn-group-toggle" data-toggle="buttons">';
 	$trackerList = selectDB($query);
 	
+	$checkV = "checked";
+	$activeV = "active";
 	for ($t=0; $t<count($trackerList); $t++){
-		$html = $html.'<label class="btn btn-secondary active">
-							<input type="checkbox" checked autocomplete="off"> '.$trackerList[$t][0].'
+
+		$html = $html.'<label id="trackerBtn'.$trackerList[$t][1].'" class="btn btn-secondary '.$activeV.'" data-id="'.$trackerList[$t][1].'">
+							<input type="checkbox" autocomplete="off" '.$checkV.'> '.$trackerList[$t][0].'
 						</label>';
+
+		if ($t == 0){
+			$checkV = "";
+			$activeV = "";
+		}
 	}
 
 	$html = $html."</div>";

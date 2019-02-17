@@ -87,9 +87,25 @@
 			    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 			}).addTo(map);
 
-			var mainMarker = L.marker([0, 0]).addTo(map);
-			var lineTrack = L.polyline([], {color: randomColor()}).addTo(map);
-			var lastPoint = null;
+			/*var mainMarker = L.marker([0, 0]).addTo(map);
+			var lineTrack = L.polyline([], {color: randomColor()}).addTo(map);*/
+			var markers = {};
+			var paths = {};
+			var lastPoints = {};
+
+			$("[id^=trackerBtn]").each(function(){
+				var currentID = $(this).attr("data-id").toString();
+				var currentName = $(this).text();
+				var rColor = randomColor();
+
+				markers[currentID] = L.marker([0, 0]).bindPopup(currentName).addTo(map);
+				paths[currentID] = L.polyline([], {color: rColor}).addTo(map);
+				lastPoints[currentID] = null;
+
+				console.log(markers);
+
+				$(this).css("text-shadow", "1px 1px 5px"+rColor);
+			});
 
 			setInterval(function(){
 			    $.ajax({
@@ -101,18 +117,23 @@
 						var locArray = jQuery.parseJSON(r);
 						var locLength = locArray.length;
 
-						var newPoint = [locArray[locLength-1][1], locArray[locLength-1][2]];
-						
 						if (firstTime){
-							map.setView(newPoint);
+							//map.setView(newPoint);
 							firstTime = false;
 						}
 
-						if (newPoint != lastPoint){
-							lastPoint = newPoint;
+						for (var tracker=0; tracker<locLength; tracker++){
+							var trackerID = locArray[tracker][0].toString();
+							var newPoint = [locArray[tracker][1], locArray[tracker][2]];
+							console.log(trackerID);
+							console.log(newPoint);
 
-							lineTrack.addLatLng(lastPoint);
-							mainMarker.setLatLng(lastPoint);
+							if (newPoint != lastPoints[trackerID]){
+								lastPoints[trackerID] = newPoint;
+
+								paths[trackerID].addLatLng(newPoint);
+								markers[trackerID].setLatLng(newPoint);
+							}
 						}
 					}
 				});
