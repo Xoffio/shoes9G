@@ -125,8 +125,6 @@
 						for (var tracker=0; tracker<locLength; tracker++){
 							var trackerID = locArray[tracker][0].toString();
 							var newPoint = [locArray[tracker][1], locArray[tracker][2]];
-							console.log(trackerID);
-							console.log(newPoint);
 
 							if (newPoint != lastPoints[trackerID]){
 								lastPoints[trackerID] = newPoint;
@@ -138,6 +136,21 @@
 					}
 				});
 			}, 1000);
+
+			$("[id^=trackerBtn]").on("click", function(){
+				var tracker = $(this);
+				var trackerID = tracker.attr("data-id").toString();
+
+				// If the tracker was active. Remove the tracker marker and path.
+				if (tracker.hasClass("active")){
+					map.removeLayer(paths[trackerID]);
+					map.removeLayer(markers[trackerID]);
+				}
+				else{
+					paths[trackerID].addTo(map);
+					markers[trackerID].addTo(map);
+				}
+			});
 		</script>
 	</body>
 </html>
