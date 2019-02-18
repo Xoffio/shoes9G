@@ -10,7 +10,7 @@
 		<script type="text/javascript" src="bootstrap/js/bootstrap.min.js"></script>
 		<script type="text/javascript">
 			function randomColor(){
-				var color = '#'+Math.floor(Math.random()*16777215).toString(16);
+				var color = '#'+Math.floor(Math.random()*16777215).toString(16).padEnd(6, '0');
 				return (color);
 			}
 		</script>
@@ -117,11 +117,22 @@
 						var locArray = jQuery.parseJSON(r);
 						var locLength = locArray.length;
 
+						// Set the avg view the first time.
 						if (firstTime){
-							//map.setView(newPoint);
+							$.ajax({
+								type: "POST",
+								url: "phpFunctions/getMidPointLoc.php",
+								success: function(mp){
+									var avgLoc = $.parseJSON(mp);
+									console.log(avgLoc[0]);
+									map.setView(avgLoc[0]);
+								}
+							});
+
 							firstTime = false;
 						}
 
+						// Get the trackers locations and update the markers.
 						for (var tracker=0; tracker<locLength; tracker++){
 							var trackerID = locArray[tracker][0].toString();
 							var newPoint = [locArray[tracker][1], locArray[tracker][2]];
