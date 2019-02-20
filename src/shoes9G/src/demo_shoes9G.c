@@ -68,7 +68,7 @@ RQrYvcbiT/9jdVYIMjESmv3FLOaNG8zhJQGdmIaI/JB0HSkjhRwbU1g1eahqRzVU\n\
 rmhKqgapRhgYVpnFtzfXqJizB4HyCv6zrlQj8qg4gQ==\n\
 -----END CERTIFICATE-----";
 
-uint8_t pass[41] = "40 bytes UNIQUE ID"; // Replace this with your unique ID
+uint8_t pass[41] = "da4d352a4109e87b20a15f5974b36795b5a054f5"; // TMP password.
 
 #define MAIN_TASK_STACK_SIZE    (2048 * 2)
 #define MAIN_TASK_PRIORITY      0
@@ -81,6 +81,18 @@ uint8_t pass[41] = "40 bytes UNIQUE ID"; // Replace this with your unique ID
 static HANDLE mainTaskHandle = NULL;
 static HANDLE secondTaskHandle = NULL;
 static HANDLE semStart = NULL;
+
+// Blink function
+// Led Will blink nTimes per nMilli
+void blinkLed(GPIO_config_t led, UINT32 nMilli, uint16_t nTimes){
+    nMilli = nMilli/nTimes/2;
+    for (int i=0; i<nTimes; i++){
+        GPIO_SetLevel(led, GPIO_LEVEL_HIGH);
+        OS_Sleep(nMilli);
+        GPIO_SetLevel(led, GPIO_LEVEL_LOW);
+        OS_Sleep(nMilli);
+    }
+}
 
 //convert unit ddmm.mmmm to degree(°) 
 double convertCoordinates(double nmeaValue, double nmeaScale){
@@ -250,13 +262,13 @@ void SecondTask(void *pData){
     
 
     // GPIO configuration
-    /*GPIO_config_t gpioLedBlue = {
+    GPIO_config_t gpioLedBlue = {
         .mode         = GPIO_MODE_OUTPUT,
         .pin          = GPIO_PIN27,
         .defaultLevel = GPIO_LEVEL_LOW
-    };*/
+    };
 
-    //GPIO_Init(gpioLedBlue); // Initialize GPIO
+    GPIO_Init(gpioLedBlue); // Initialize GPIO
 
     // Get imei
     //memset(imei, 0, sizeof(imei));
@@ -286,6 +298,7 @@ void SecondTask(void *pData){
 
     //wait for gprs network connection ok
     Trace(1, "#LOG: waiting to connect to a network.");
+    blinkLed(gpioLedBlue, 2000, 10);
     semStart = OS_CreateSemaphore(0);
     OS_WaitForSemaphore(semStart,OS_TIME_OUT_WAIT_FOREVER);
     OS_DeleteSemaphore(semStart);
@@ -301,6 +314,8 @@ void SecondTask(void *pData){
 
             snprintf(locationBuffer, locationBufferLen, "\r\npass=%s&latitude=%.6f&longitude=%.6f", pass, latitude, longitude);
             Trace(1, "#LOG: %s", locationBuffer);
+
+            blinkLed(gpioLedBlue, 200, 2);
 
             if(Https_Post(SERVER_IP, SERVER_PORT, SERVER_PATH_POST, locationBuffer, strlen(locationBuffer), buffer, bufferSize) < 0){
                 Trace(1,"http get fail");
