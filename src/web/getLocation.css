@@ -66,3 +66,7 @@ html, .col, .row, .container-fluid{
 	padding-top: 0px;
 	padding-bottom: 0px;
 }
+
+.leaflet-tile.leaflet-tile-loaded{
+	filter: contrast(102%) brightness(93%) saturate(101%) grayscale(85%) invert(100%);
+}
