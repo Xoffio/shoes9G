@@ -96,6 +96,7 @@ void blinkLed(GPIO_config_t led, UINT32 nMilli, uint16_t nTimes){
 
 //convert unit ddmm.mmmm to degree(°) 
 double convertCoordinates(double nmeaValue, double nmeaScale){
+    // nmeaValue=40408191, nmeaScale=10000
     double  tmp = nmeaValue/nmeaScale/100.0;
     int     dd  = (int)tmp;
     double  mm  = (tmp - dd) * 100.0 / 60.0;
@@ -202,7 +203,7 @@ void EventDispatch(API_Event_t* pEvent){
             break;
 
         case API_EVENT_ID_GPS_UART_RECEIVED:
-            //Trace(1,"#LOG: received GPS data,length:%d, data:%s",pEvent->param1,pEvent->pParam1);
+            Trace(1,"#LOG: received GPS data,length:%d, data:%s",pEvent->param1,pEvent->pParam1);
             GPS_Update(pEvent->pParam1,pEvent->param1);
             break;
 
@@ -284,7 +285,7 @@ void SecondTask(void *pData){
         OS_Sleep(1000);
     }
 
-    // set gps nmea output interval
+    // Set gps nmea output interval
     for(uint8_t i = 0;i<5;++i){
         bool ret = GPS_SetOutputInterval(10000);
         Trace(1,"#LOG: set gps ret:%d",ret);
@@ -293,6 +294,13 @@ void SecondTask(void *pData){
         OS_Sleep(1000);
     }
 
+    // Set the GPS to Fix mode (Needs at least 4 satellites to get accuate position and time)
+    if (!GPS_SetFixMode(GPS_FIX_MODE_LOW_SPEED))
+        Trace(1, "#LOG: set fix mode fail");
+    else
+        Trace(1, "#LOG: set fix mode");
+
+    // Set gps nmea output interval
     if(!GPS_SetOutputInterval(1000))
         Trace(1,"set nmea output interval fail");
 
@@ -306,8 +314,10 @@ void SecondTask(void *pData){
     while(1){
         uint8_t status;
         Network_GetActiveStatus(&status);
+        int nOfSatellites = gpsInfo->gga.satellites_tracked;
 
-        if (status){
+        // Send location if is connected to the network and the number of satellites tracked are 3 or more
+        if (status && (nOfSatellites >= 3)){
             // Convert the coordinates
             double latitude =  convertCoordinates(gpsInfo->rmc.latitude.value, gpsInfo->rmc.latitude.scale);
             double longitude =  convertCoordinates(gpsInfo->rmc.longitude.value, gpsInfo->rmc.longitude.scale);
