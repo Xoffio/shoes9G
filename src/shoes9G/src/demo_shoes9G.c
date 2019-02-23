@@ -26,6 +26,7 @@
 //#include "api_debug.h"
 //#include "api_event.h"
 #include "api_hal_gpio.h"
+#include "api_hal_pm.h"
 #include "gps_parse.h"
 #include "gps.h"
 #include "api_ssl.h"
@@ -81,6 +82,9 @@ uint8_t pass[41] = "da4d352a4109e87b20a15f5974b36795b5a054f5"; // TMP password.
 static HANDLE mainTaskHandle = NULL;
 static HANDLE secondTaskHandle = NULL;
 static HANDLE semStart = NULL;
+
+unsigned int sslFailCounter = 0;
+unsigned int sslFailReset = 4; // Restart chip after failing 'sslFailReset' times consecutive
 
 // Blink function
 // Led Will blink nTimes per nMilli
@@ -143,6 +147,7 @@ int Https_Post(const char* domain, const char* port,const char* path, const char
         error = SSL_Connect(&config, domain, port); // BUG HERE: crash after 8min aprox.
         if(error != SSL_ERROR_NONE){
             Trace(1,"#LOG: ssl connect error:%d",error);
+            sslFailCounter++;
             goto exit02;
         }
         else{
@@ -158,6 +163,9 @@ int Https_Post(const char* domain, const char* port,const char* path, const char
             }
             else{
                 //int retBufferLen = *bufferLen;
+
+                // Reset the sslFailCounter since the package is sent
+                sslFailCounter = 0;
 
                 // If package sent then read response.
                 memset(retBuffer, 0, sizeof(retBuffer[0])*bufferLen);
@@ -179,6 +187,11 @@ int Https_Post(const char* domain, const char* port,const char* path, const char
         Trace(1,"#LOG: ssl destroy");
         SSL_Destroy(&config);
     OS_Free(buffer);
+
+    // Restart the chip if can not be connected 'sslFailReset' times consecutive
+    if (sslFailCounter >= sslFailReset)
+        PM_Restart();
+
     return 0;
 }
 
@@ -203,7 +216,7 @@ void EventDispatch(API_Event_t* pEvent){
             break;
 
         case API_EVENT_ID_GPS_UART_RECEIVED:
-            Trace(1,"#LOG: received GPS data,length:%d, data:%s",pEvent->param1,pEvent->pParam1);
+            //Trace(1,"#LOG: received GPS data,length:%d, data:%s",pEvent->param1,pEvent->pParam1);
             GPS_Update(pEvent->pParam1,pEvent->param1);
             break;
 
