@@ -62,6 +62,14 @@ html, .col, .row, .container-fluid{
 	padding-bottom: 1%;
 }
 
+.offlineTag{
+	float: right;
+	font-size: 10px;
+	color: #d24f4f;
+	padding-top: 1%;
+	padding-bottom: 1%;
+}
+
 .trackerFilters label{
 	padding-top: 0px;
 	padding-bottom: 0px;

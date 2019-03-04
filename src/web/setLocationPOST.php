@@ -1,15 +1,20 @@
 <?php
 	include "phpFunctions/databaseFunctions.php";
 
+	$data = explode(',', $_POST["d"]);
+
 	// POST data
-	$pass = $_POST["pass"];
-	$latitude = $_POST["latitude"];
-	$longitude = $_POST["longitude"];
+	$pass = $data[0];//$_POST["pass"];
+	$latitude = $data[1];//$_POST["latitude"];
+	$longitude = $data[2];//$_POST["longitude"];
+	$nOfSatellites = $data[3];
+	$voltage = $data[4]/1000.0;
+	$batteryPercent = $data[5];
 	$trackerID = "(SELECT id FROM trackers WHERE pass = '$pass')";
 	$limitVal = 0.0001;
 
 	// Get last location
-	$preArray = selectDB("
+	/*$preArray = selectDB("
 		SELECT trackerID, ABS(latitude-$latitude) AS laDiff, 
 		ABS(longitude-$longitude) AS loDiff, TIMESTAMPDIFF(SECOND, dateTime, NOW()) AS dateDiff,
 		latitude, longitude FROM logs
@@ -28,14 +33,17 @@
 			$latitude = $preArray[0][4];
 			$longitude = $preArray[0][5];
 		}
-	}
+	}*/
 
 	$result = insertDB("
-		INSERT INTO logs (trackerID, latitude, longitude)
+		INSERT INTO logs (trackerID, latitude, longitude, nSatellites, voltage, batteryP)
 		VALUES (
 			$trackerID,
 			$latitude,
-			$longitude
+			$longitude,
+			$nOfSatellites,
+			$voltage,
+			$batteryPercent
 		);
 	");
 

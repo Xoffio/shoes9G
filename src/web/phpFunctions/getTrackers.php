@@ -32,6 +32,8 @@
 
 		$html = $html.'<label id="trackerBtn'.$trackerList[$t][1].'" class="btn btn-secondary '.$activeV.'" data-id="'.$trackerList[$t][1].'">
 							<input type="checkbox" autocomplete="off" '.$checkV.'> '.$trackerList[$t][0].'
+							<span class="onlineTag" style="display:none;">Online</span>
+							<span class="offlineTag" style="display:none;">Offline</span>
 						</label>';
 
 		if ($t == 0){

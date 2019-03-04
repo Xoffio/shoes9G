@@ -87,8 +87,6 @@
 			    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 			}).addTo(map);
 
-			/*var mainMarker = L.marker([0, 0]).addTo(map);
-			var lineTrack = L.polyline([], {color: randomColor()}).addTo(map);*/
 			var markers = {};
 			var paths = {};
 			var lastPoints = {};
@@ -104,7 +102,7 @@
 
 				console.log(markers);
 
-				$(this).css("text-shadow", "1px 1px 5px"+rColor);
+				//$(this).css("text-shadow", "1px 1px 5px"+rColor);
 			});
 
 			setInterval(function(){
@@ -115,7 +113,8 @@
 					//dataType: "json",
 					success: function(r){
 						var locArray = jQuery.parseJSON(r);
-						var locLength = locArray.length;
+						var locLength = locArray.length - 1;
+						var serverTime = locArray[locLength];
 
 						// Set the avg view the first time.
 						if (firstTime){
@@ -136,12 +135,28 @@
 						for (var tracker=0; tracker<locLength; tracker++){
 							var trackerID = locArray[tracker][0].toString();
 							var newPoint = [locArray[tracker][1], locArray[tracker][2]];
+							var newPing = Date.parse(locArray[tracker][3])/1000;
 
+							// If the location is new then update it on the map
 							if (newPoint != lastPoints[trackerID]){
 								lastPoints[trackerID] = newPoint;
 
 								paths[trackerID].addLatLng(newPoint);
 								markers[trackerID].setLatLng(newPoint);
+							}
+
+							// If the last tracker's ping is bigger than 30sec
+							//console.log("Server time: "+serverTime);
+							//console.log("new ping: "+newPing);
+							var diffTime = serverTime - newPing;
+							//console.log(diffTime);
+							if (diffTime > 30){
+								$("#trackerBtn"+trackerID+" .onlineTag").hide();
+								$("#trackerBtn"+trackerID+" .offlineTag").show();
+							}
+							else{
+								$("#trackerBtn"+trackerID+" .offlineTag").hide();
+								$("#trackerBtn"+trackerID+" .onlineTag").show();
 							}
 						}
 					}
