@@ -69,7 +69,7 @@ RQrYvcbiT/9jdVYIMjESmv3FLOaNG8zhJQGdmIaI/JB0HSkjhRwbU1g1eahqRzVU\n\
 rmhKqgapRhgYVpnFtzfXqJizB4HyCv6zrlQj8qg4gQ==\n\
 -----END CERTIFICATE-----";
 
-uint8_t pass[41] = "da4d352a4109e87b20a15f5974b36795b5a054f5"; // TMP password.
+uint8_t pass[41] = "01"; // TMP password.
 
 #define MAIN_TASK_STACK_SIZE    (2048 * 2)
 #define MAIN_TASK_PRIORITY      0
@@ -84,17 +84,32 @@ static HANDLE secondTaskHandle = NULL;
 static HANDLE semStart = NULL;
 
 unsigned int sslFailCounter = 0;
+unsigned int sslFailRCounter = 0;
 unsigned int sslFailReset = 4; // Restart chip after failing 'sslFailReset' times consecutive
+
+// GPIO configuration
+GPIO_config_t gpioLedBlue = {
+    .mode         = GPIO_MODE_OUTPUT,
+    .pin          = GPIO_PIN27,
+    .defaultLevel = GPIO_LEVEL_LOW
+};
 
 // Blink function
 // Led Will blink nTimes per nMilli
 void blinkLed(GPIO_config_t led, UINT32 nMilli, uint16_t nTimes){
-    nMilli = nMilli/nTimes/2;
-    for (int i=0; i<nTimes; i++){
+    if (nTimes > 1){
+        nMilli = nMilli/nTimes/2;
+        for (int i=0; i<nTimes; i++){
+            GPIO_SetLevel(led, GPIO_LEVEL_HIGH);
+            OS_Sleep(nMilli);
+            GPIO_SetLevel(led, GPIO_LEVEL_LOW);
+            OS_Sleep(nMilli);
+        }
+    }
+    else{
         GPIO_SetLevel(led, GPIO_LEVEL_HIGH);
         OS_Sleep(nMilli);
         GPIO_SetLevel(led, GPIO_LEVEL_LOW);
-        OS_Sleep(nMilli);
     }
 }
 
@@ -162,6 +177,7 @@ int Https_Post(const char* domain, const char* port,const char* path, const char
                 goto exit01;
             }
             else{
+                blinkLed(gpioLedBlue, 200, 1);
                 //int retBufferLen = *bufferLen;
 
                 // Reset the sslFailCounter since the package is sent
@@ -173,7 +189,11 @@ int Https_Post(const char* domain, const char* port,const char* path, const char
                 if(ret <= 0){
                     error = ret;
                     Trace(1,"#LOG: ssl read fail:%d",error);
+                    sslFailRCounter++;
                     goto exit01;
+                }
+                else{
+                    sslFailRCounter = 0;
                 }
                 Trace(1,"#LOG: read len:%d, data:%s", ret, retBuffer);
             }
@@ -189,8 +209,10 @@ int Https_Post(const char* domain, const char* port,const char* path, const char
     OS_Free(buffer);
 
     // Restart the chip if can not be connected 'sslFailReset' times consecutive
-    if (sslFailCounter >= sslFailReset)
+    if (sslFailCounter >= sslFailReset || sslFailRCounter >= sslFailReset){
+        Trace(1, "#LOG: Restarting chip.");
         PM_Restart();
+    }
 
     return 0;
 }
@@ -273,14 +295,7 @@ void SecondTask(void *pData){
     uint8_t imei[16];
     int locationBufferLen = 88; // 3 \r\n. 45 of latitude, longitude. 40 of password
     char locationBuffer[locationBufferLen+2]; 
-    
-
-    // GPIO configuration
-    GPIO_config_t gpioLedBlue = {
-        .mode         = GPIO_MODE_OUTPUT,
-        .pin          = GPIO_PIN27,
-        .defaultLevel = GPIO_LEVEL_LOW
-    };
+    uint8_t vPercent;
 
     GPIO_Init(gpioLedBlue); // Initialize GPIO
 
@@ -329,13 +344,18 @@ void SecondTask(void *pData){
         Network_GetActiveStatus(&status);
         int nOfSatellites = gpsInfo->gga.satellites_tracked;
 
-        // Send location if is connected to the network and the number of satellites tracked are 3 or more
-        if (status && (nOfSatellites >= 3)){
+        Trace(1, "#LOG: number of satellites tracked: %i", nOfSatellites);
+
+        uint16_t v = PM_Voltage(&vPercent);
+        Trace(1,"voltage:%dmV,%d percent last,times count:",v,vPercent);
+
+        // Send location if is connected to the network and the number of satellites tracked are more than 3
+        if (status && (nOfSatellites > 3)){
             // Convert the coordinates
             double latitude =  convertCoordinates(gpsInfo->rmc.latitude.value, gpsInfo->rmc.latitude.scale);
             double longitude =  convertCoordinates(gpsInfo->rmc.longitude.value, gpsInfo->rmc.longitude.scale);
 
-            snprintf(locationBuffer, locationBufferLen, "\r\npass=%s&latitude=%.6f&longitude=%.6f", pass, latitude, longitude);
+            snprintf(locationBuffer, locationBufferLen, "\r\nd=%s,%.6f,%.6f,%i,%i,%i", pass, latitude, longitude, nOfSatellites, v, vPercent);
             Trace(1, "#LOG: %s", locationBuffer);
 
             blinkLed(gpioLedBlue, 200, 2);
