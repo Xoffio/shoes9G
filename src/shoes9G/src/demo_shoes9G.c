@@ -323,7 +323,7 @@ void SecondTask(void *pData){
     }
 
     // Set the GPS to Fix mode (Needs at least 4 satellites to get accuate position and time)
-    if (!GPS_SetFixMode(GPS_FIX_MODE_LOW_SPEED))
+    if (!GPS_SetFixMode(GPS_FIX_MODE_NORMAL))//GPS_FIX_MODE_LOW_SPEED
         Trace(1, "#LOG: set fix mode fail");
     else
         Trace(1, "#LOG: set fix mode");
@@ -353,7 +353,40 @@ void SecondTask(void *pData){
         if (status && (nOfSatellites > 3)){
             // Convert the coordinates
             double latitude =  convertCoordinates(gpsInfo->rmc.latitude.value, gpsInfo->rmc.latitude.scale);
-            double longitude =  convertCoordinates(gpsInfo->rmc.longitude.value, gpsInfo->rmc.longitude.scale);
+            double longitude = convertCoordinates(gpsInfo->rmc.longitude.value, gpsInfo->rmc.longitude.scale);
+
+            // Do an average of locations to avoid unexpected values.
+            /*int nAverage = 5;
+            float sumSatellites = 0;
+            double latitude =  0, longitude =  0, lastLat = 0, lastLon = 0;
+            for (int nTime=1; nTime<=nAverage; nTime++){
+                nOfSatellites = gpsInfo->gga.satellites_tracked;
+                sumSatellites += nOfSatellites;
+
+                if ((nOfSatellites >= (sumSatellites/nTime)-2) && (nOfSatellites > 3)){
+                    // Convert the coordinates
+                    lastLat = convertCoordinates(gpsInfo->rmc.latitude.value, gpsInfo->rmc.latitude.scale);
+                    lastLon = convertCoordinates(gpsInfo->rmc.longitude.value, gpsInfo->rmc.longitude.scale);
+                    
+                    latitude += lastLat;
+                    longitude += lastLon;
+                }
+                else{
+                    if (lastLat == 0 && lastLon == 0 ){ // Future problem...
+                        Trace(1," ERROR!! CHECK THE CODE #01.");
+                    }
+                    else{
+                        latitude += lastLat;
+                        longitude += lastLon;
+                    }
+                }
+
+                OS_Sleep(1000);
+            }
+
+            nOfSatellites = (int)(sumSatellites/nAverage);
+            latitude /= nAverage;
+            longitude /= nAverage;*/
 
             snprintf(locationBuffer, locationBufferLen, "\r\nd=%s,%.6f,%.6f,%i,%i,%i", pass, latitude, longitude, nOfSatellites, v, vPercent);
             Trace(1, "#LOG: %s", locationBuffer);
