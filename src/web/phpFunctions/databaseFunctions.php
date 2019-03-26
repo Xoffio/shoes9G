@@ -1,7 +1,7 @@
 <?php  
 	$dbhost = "localhost";
-	$dbuser = 'shoes9G';
-	$dbpass = 'br00klynTrackers';
+	$dbuser = 'YOUR_DB_USER';
+	$dbpass = 'YOUR_DB_PASSWORD';
 	$dbname = "shoes9G";
 
 	function insertDB($sql){

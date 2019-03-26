@@ -31,9 +31,13 @@
 	for ($t=0; $t<count($trackerList); $t++){
 
 		$html = $html.'<label id="trackerBtn'.$trackerList[$t][1].'" class="btn btn-secondary '.$activeV.'" data-id="'.$trackerList[$t][1].'">
+							<img class="trackerButtonMore" src="icons/_ionicons_svg_md-more.svg">
 							<input type="checkbox" autocomplete="off" '.$checkV.'> '.$trackerList[$t][0].'
 							<span class="onlineTag" style="display:none;">Online</span>
 							<span class="offlineTag" style="display:none;">Offline</span>
+							<div id="trackerInfo'.$trackerList[$t][1].'" class="trackersInfoDiv" style="display: none;">
+								
+							</div>
 						</label>';
 
 		if ($t == 0){

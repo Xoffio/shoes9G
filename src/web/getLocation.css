@@ -78,3 +78,16 @@ html, .col, .row, .container-fluid{
 .leaflet-tile.leaflet-tile-loaded{
 	filter: contrast(102%) brightness(93%) saturate(101%) grayscale(85%) invert(100%);
 }
+
+.trackerButtonMore{
+	width: 25px;
+}
+
+.trackerButtonMore:hover{
+	filter: invert(1);
+}
+
+.trackersInfoDiv{
+	width: 100%;
+	height: 100px;
+}

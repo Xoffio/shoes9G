@@ -51,7 +51,7 @@
 						</div>
 					</div>
 
-					<div class="card-body">
+					<div class="card-body" style="overflow: auto;">
 
 						<!-- <div class="btn-group-toggle" data-toggle="buttons">
 							<label class="btn btn-secondary active">
@@ -176,6 +176,13 @@
 					paths[trackerID].addTo(map);
 					markers[trackerID].addTo(map);
 				}
+			});
+
+			$(".trackerButtonMore").on("click", function(){
+				var currentID = $(this).parent().attr("data-id");
+
+				console.log(currentID);
+				$("#trackerInfo"+currentID).toggle();
 			});
 		</script>
 	</body>
