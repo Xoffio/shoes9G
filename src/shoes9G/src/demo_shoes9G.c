@@ -7,7 +7,7 @@
  * @Author: Ricx8 
  * @Date: 01-20-2019 11:59:50 (Lunar eclipse) 
  * @Last Modified by: Ricx8
- * @Last Modified time: 01-30-2019 02:09:20 pm
+ * @Last Modified time: 04-29-2019 05:53 pm
  */
 
 #include "stdbool.h"
@@ -338,6 +338,9 @@ void SecondTask(void *pData){
     semStart = OS_CreateSemaphore(0);
     OS_WaitForSemaphore(semStart,OS_TIME_OUT_WAIT_FOREVER);
     OS_DeleteSemaphore(semStart);
+
+    // Low power mode. Frequency = 32kHz
+    PM_SleepMode(true);
 
     while(1){
         uint8_t status;
