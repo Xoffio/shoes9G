@@ -15,6 +15,7 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <time.h>
 #include <api_os.h>
 #include <api_event.h>
 #include <api_socket.h>
@@ -71,6 +72,11 @@ rmhKqgapRhgYVpnFtzfXqJizB4HyCv6zrlQj8qg4gQ==\n\
 
 uint8_t pass[41] = "01"; // TMP password.
 
+// There is a bug in the chip (I Think is hardware)
+// that maskes the chip crash? or infinite loop?
+// to avoid that I'll restart the chip every RESET_MINUTES
+#define RESET_MINUTES           15
+
 #define MAIN_TASK_STACK_SIZE    (2048 * 2)
 #define MAIN_TASK_PRIORITY      0
 #define MAIN_TASK_NAME          "Main Task"
@@ -123,6 +129,13 @@ double convertCoordinates(double nmeaValue, double nmeaScale){
     tmp = dd+mm;
 
     return(tmp);
+}
+
+float getCurrentTime(clock_t initTime){
+    clock_t diffTime = clock() - initTime;
+    float cTime = ((float)diffTime)/CLOCKS_PER_SEC; 
+
+    return(cTime);
 }
 
 //https POST
@@ -288,6 +301,8 @@ void EventDispatch(API_Event_t* pEvent){
 
 // Secondary task where I'm going to execute everything.
 void SecondTask(void *pData){
+
+    clock_t initTime = clock();
     
     GPS_Info_t* gpsInfo = Gps_GetInfo();
     int bufferSize = 2048;
@@ -341,6 +356,9 @@ void SecondTask(void *pData){
 
     // Low power mode. Frequency = 32kHz
     PM_SleepMode(true);
+
+    // reset chip variables
+    float resetTime = RESET_MINUTES * 60.0;
 
     while(1){
         uint8_t status;
@@ -405,6 +423,8 @@ void SecondTask(void *pData){
         else{
             OS_Sleep(1000);
         }
+
+        if (getCurrentTime(initTime) > resetTime) PM_Restart();
     }
 }
 
